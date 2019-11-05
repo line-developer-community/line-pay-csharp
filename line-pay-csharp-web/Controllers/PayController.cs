@@ -2,6 +2,7 @@
 using LineDC.Pay.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -12,28 +13,20 @@ namespace LineDC.Pay.Controllers
     [Route("api/[controller]")]
     public class PayController : Controller
     {
-        private LinePayClient client;
-        private IConfiguration configuration { get; set; }
+        private ILinePayClient Client { get; }
+        private AppSettings AppSettings { get; set; }
 
-        public PayController()
+        public PayController(ILinePayClient client, IOptions<AppSettings> settingsOptions)
         {
-            var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
-
-            configuration = builder.Build();
-
-            client = new LinePayClient(
-                configuration["LinePay:ChannelId"],
-                configuration["LinePay:ChannelSecret"],
-                bool.Parse(configuration["LinePay:IsSandbox"]));
+            Client = client;
+            AppSettings = settingsOptions.Value;
         }
 
         [HttpGet]
         [Route("payment")]
         public async Task<IActionResult> GetPayment(Int64? transactionId, string orderId)
         {
-            var response = await client.GetPaymentAsync(transactionId, orderId);
+            var response = await Client.GetPaymentAsync(transactionId, orderId);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
 
@@ -41,7 +34,7 @@ namespace LineDC.Pay.Controllers
         [Route("authorize")]
         public async Task<IActionResult> GetAuthorize(Int64? transactionId, string orderId)
         {
-            var response = await client.GetAuthorizationAsync(transactionId, orderId);
+            var response = await Client.GetAuthorizationAsync(transactionId, orderId);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
 
@@ -49,7 +42,7 @@ namespace LineDC.Pay.Controllers
         [Route("authorize/void")]
         public async Task<IActionResult> VoidAuthorization(Int64 transactionId)
         {
-            var response = await client.VoidAuthorizationAsync(transactionId);
+            var response = await Client.VoidAuthorizationAsync(transactionId);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
 
@@ -63,13 +56,13 @@ namespace LineDC.Pay.Controllers
                 Amount = 1,
                 Currency = Currency.JPY,
                 OrderId =  Guid.NewGuid().ToString(),
-                ConfirmUrl = $"{configuration["ServerUri"]}/api/pay/confirm",
-                CancelUrl = $"{configuration["ServerUri"]}/api/pay/cancel",
+                ConfirmUrl = $"{AppSettings.ServerUri}/api/pay/confirm",
+                CancelUrl = $"{AppSettings.ServerUri}/api/pay/cancel",
                 Capture = capture,
                 PayType = payType
             };
 
-            var response = await client.ReserveAsync(reserve);
+            var response = await Client.ReserveAsync(reserve);
             CacheService.Cache.Add(response.Info.TransactionId, reserve);
 
             return Redirect(response.Info.PaymentUrl.Web);
@@ -90,13 +83,13 @@ namespace LineDC.Pay.Controllers
 
             if ((bool)reserve.Capture)
             {
-                var response = await client.ConfirmAsync(transactionId, confirm);
+                var response = await Client.ConfirmAsync(transactionId, confirm);
                 return new OkObjectResult(JsonConvert.SerializeObject(response));
             }
             else
             {
-                var authorizationRes = await client.GetAuthorizationAsync(transactionId, reserve.OrderId);
-                var captureRes = await client.CaptureAsync(transactionId, reserve.Amount, reserve.Currency);
+                var authorizationRes = await Client.GetAuthorizationAsync(transactionId, reserve.OrderId);
+                var captureRes = await Client.CaptureAsync(transactionId, reserve.Amount, reserve.Currency);
                 return new OkObjectResult(JsonConvert.SerializeObject(captureRes));
             }
         }
@@ -105,7 +98,7 @@ namespace LineDC.Pay.Controllers
         [Route("refund")]
         public async Task<IActionResult> Refund(Int64 transactionId, int amount)
         {            
-            var response = await client.RefundAsync(transactionId, amount);
+            var response = await Client.RefundAsync(transactionId, amount);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
 
@@ -113,7 +106,7 @@ namespace LineDC.Pay.Controllers
         [Route("regkey/check")]
         public async Task<IActionResult> Check(string regkey)
         {
-            var response = await client.RegKeyCheckAsync(regkey);
+            var response = await Client.RegKeyCheckAsync(regkey);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
 
@@ -121,7 +114,7 @@ namespace LineDC.Pay.Controllers
         [Route("regkey/expire")]
         public async Task<IActionResult> Expire(string regkey)
         {
-            var response = await client.RegKeyExpireAsync(regkey);
+            var response = await Client.RegKeyExpireAsync(regkey);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
 
@@ -137,7 +130,7 @@ namespace LineDC.Pay.Controllers
                 ProductName = "チョコレート",
                 OrderId = Guid.NewGuid().ToString()
             };
-            var response = await client.PreApprovedPayAsync(regkey, reserve);
+            var response = await Client.PreApprovedPayAsync(regkey, reserve);
             return new OkObjectResult(JsonConvert.SerializeObject(response));
         }
     }

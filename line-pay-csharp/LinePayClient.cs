@@ -10,7 +10,7 @@ namespace LineDC.Pay
     /// <summary>
     /// LINE Messaging API client, which handles request/response to LINE server.
     /// </summary>
-    public class LinePayClient : IDisposable
+    public class LinePayClient : ILinePayClient
     {
         private HttpClient client;
         static private Uri realUri = new Uri("https://api-pay.line.me");
