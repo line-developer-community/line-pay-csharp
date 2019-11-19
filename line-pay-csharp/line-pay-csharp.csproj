@@ -1,13 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>LinePay</AssemblyName>
     <RootNamespace>LineDC.Pay</RootNamespace>
-    <Version>1.0.1</Version>
-    <PackageReleaseNotes>1.0.1 add interface
-1.0.0 initial release
+    <Version>1.0.0</Version>
+    <PackageReleaseNotes>1.0.0 initial release
 </PackageReleaseNotes>
+    <Authors>LINE Developer Community</Authors>
+    <PackageId>LineDC.Pay</PackageId>
+    <Description>C# LINE Pay SDK for v2</Description>
+    <Copyright>LINE Developer Community</Copyright>
+    <PackageLicenseExpression></PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/line-developer-community/line-pay-csharp</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/line-developer-community/line-pay-csharp</PackageProjectUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <Product>LINE Developer Community</Product>
   </PropertyGroup>
 
   <ItemGroup>
