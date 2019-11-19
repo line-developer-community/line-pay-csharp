@@ -12,21 +12,13 @@ namespace LineDC.Pay.Controllers
     [Route("api/[controller]")]
     public class PayController : Controller
     {
-        private LinePayClient client;
+        private ILinePayClient client;
         private IConfiguration configuration { get; set; }
 
-        public PayController()
+        public PayController(ILinePayClient client, IConfiguration configuration)
         {
-            var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
-
-            configuration = builder.Build();
-
-            client = new LinePayClient(
-                configuration["LinePay:ChannelId"],
-                configuration["LinePay:ChannelSecret"],
-                bool.Parse(configuration["LinePay:IsSandbox"]));
+            this.client = client;
+            this.configuration = configuration;
         }
 
         [HttpGet]

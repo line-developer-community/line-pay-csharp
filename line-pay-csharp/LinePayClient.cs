@@ -10,14 +10,15 @@ namespace LineDC.Pay
     /// <summary>
     /// LINE Messaging API client, which handles request/response to LINE server.
     /// </summary>
-    public class LinePayClient : IDisposable
+    public class LinePayClient : ILinePayClient
     {
-        private HttpClient client;
+        private static HttpClient client = new HttpClient();
         static private Uri realUri = new Uri("https://api-pay.line.me");
-        static private Uri sandboxUri = new Uri( "https://sandbox-api-pay.line.me");
+        static private Uri sandboxUri = new Uri("https://sandbox-api-pay.line.me");
         private string version;
-       
-        static private JsonSerializerSettings serializerSettings = new JsonSerializerSettings() {
+
+        static private JsonSerializerSettings serializerSettings = new JsonSerializerSettings()
+        {
             DefaultValueHandling = DefaultValueHandling.Ignore
         };
         /// <summary>
@@ -33,7 +34,6 @@ namespace LineDC.Pay
             if (string.IsNullOrEmpty(channelSecret)) { throw new ArgumentNullException(nameof(channelSecret)); }
 
             this.version = version;
-            client = new HttpClient();
             client.BaseAddress = isSandbox ? sandboxUri : realUri;
             client.DefaultRequestHeaders.TryAddWithoutValidation("X-LINE-ChannelId", channelId);
             client.DefaultRequestHeaders.TryAddWithoutValidation("X-LINE-ChannelSecret", channelSecret);
@@ -138,7 +138,7 @@ namespace LineDC.Pay
         /// <param name="refund">Refund</param>
         /// <returns>RefundResponse</returns>
         public async Task<RefundResponse> RefundAsync(Int64 transactionId, Refund refund)
-        {           
+        {
             var response = await client.PostAsync($"/{version}/payments/{transactionId}/refund", new StringContent(JsonConvert.SerializeObject(refund, serializerSettings), Encoding.UTF8, "application/json"));
             if (response.IsSuccessStatusCode)
                 return JsonConvert.DeserializeObject<RefundResponse>(await response.Content.ReadAsStringAsync());
@@ -262,13 +262,5 @@ namespace LineDC.Pay
                 throw new Exception(await response.Content.ReadAsStringAsync());
         }
         #endregion
-
-        /// <summary>
-        /// Dispose client.
-        /// </summary>
-        public void Dispose()
-        {
-            client?.Dispose();
-        }
     }
 }
